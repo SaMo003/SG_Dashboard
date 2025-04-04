@@ -142,13 +142,13 @@ if st.session_state['active_fullscreen'] is None:
     if len(date_range_filter)!= 0:
         start_date,end_date = date_range_filter
         if not df_data.empty:
-            df_data = df_data[(pd.to_datetime((df_data['date_occured']) >= pd.to_datetime(start_date)) & (pd.to_datetime(df_data['date_occured']) <= pd.to_date_time(end_date))]
+            df_data = df_data[(pd.to_datetime(df_data['date_occured']) >= pd.to_datetime(start_date)) & (pd.to_datetime(df_data['date_occured']) <= pd.to_date_time(end_date))]
 
         if not df_alerts.empty:
-            df_alerts = df_alerts[(pd.to_datetime((df_alerts['date_occured']) >= pd.to_datetime(start_date)) & (pd.to_datetime(df_alerts['date_occured']) <= pd.to_datetime(end_date))]
+            df_alerts = df_alerts[(pd.to_datetime(df_alerts['date_occured']) >= pd.to_datetime(start_date)) & (pd.to_datetime(df_alerts['date_occured']) <= pd.to_datetime(end_date))]
         
         if not df_incidents.empty:
-            df_incidents = df_incidents[(pd.to_datetime((df_incidents['date_occured'] >= pd.to_datetime(start_date)) & (pd.to_datetime(df_incidents['date_occured']) <= pd.to_datetime(end_date))]
+            df_incidents = df_incidents[(pd.to_datetime(df_incidents['date_occured'] >= pd.to_datetime(start_date)) & (pd.to_datetime(df_incidents['date_occured']) <= pd.to_datetime(end_date))]
 
     df_data = df_data.loc[:, ['DateTime', 'App Name', 'Severity', 'Alert Type', 'Message', 'URL']]
     df_incidents = df_incidents.loc[:, ['App Name', 'Id', 'Creation Date', 'Short Description', 'Priority', 'Status']]
