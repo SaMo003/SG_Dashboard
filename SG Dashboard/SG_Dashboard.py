@@ -2,7 +2,7 @@ import streamlit as st
 import requests as req
 import pandas as pd
 import plotly.express as px
-from constant_valus import App_Names,url_alerts,url_incidents,url_data,url_changes
+from constant_values import App_Names,url_alerts,url_incidents,url_data,url_changes
 
 st.set_page_config(layout="wide")
 
@@ -31,8 +31,8 @@ df_alerts = pd.DataFrame(data_alerts) if data_alerts else pd.DataFrame(columns=[
 df_incidents = pd.DataFrame(data_incidents) if data_incidents else pd.DataFrame(columns=['App Name','Id','Creation Date','Short Description','Priority','Status'])
 df_changes = pd.DataFrame(data_changes) if data_changes else pd.DataFrame(columns=['Display Label','Scheduled Start Time','Scheduled End Time','Register for actual service','Impacted Core Business 0','Phase Id','Service Desk Group','Ticket Link','Date Occurred'])
 
-if df_incident.empty:
-    df_incident = pd.DataFrame(columns=['App Name','Id','Creation Date','Short Description','Priority','Status'])
+if df_incidents.empty:
+    df_incidents = pd.DataFrame(columns=['App Name','Id','Creation Date','Short Description','Priority','Status'])
 if df_alerts.empty:
     df_alerts = pd.DataFrame(columns=['Id','App Name','Display Label','Ems Creation Date','Priority'])
 
@@ -63,7 +63,7 @@ def render_table_section(title,df,table_key):
                 f'<div class="dataframe-container">{create_empty_table(df.columns)}</div>', unsafe_allow_html=True,
             )
         else:
-            st.Markdown(
+            st.markdown(
                 f'<div class="dataframe-container">{df.to_html(escape=False,index=False)}</div>',unsafe_allow_html=True
             )
         return True
@@ -71,7 +71,7 @@ def render_table_section(title,df,table_key):
     elif active is not None:
         return False
 
-    st.Markdown(f'## {title}')
+    st.markdown(f'## {title}')
     if st.button("Full Screen",key=f"full_{table_key}"):
         st.session_state['active_fullscreen'] = table_key
 
@@ -79,7 +79,7 @@ def render_table_section(title,df,table_key):
         st.markdown(
             f'<div class="dataframe-container">{create_empty_table(df.columns)}</div>', unsafe_allow_html=True)
     else:
-        st.Markdown(
+        st.markdown(
             f'<div class="dataframe-container">{df.to_html(escape=False,index=False)}</div>',unsafe_allow_html=True )
 
     return False
@@ -94,8 +94,8 @@ df_data.rename(columns={
   'url': 'URL'
 }, inplace=True)
 
-# Rename and select columns for df_incident
-df_incident.rename(columns={
+# Rename and select columns for df_incidents
+df_incidents.rename(columns={
   'app_name': 'App Name',
   'EmsCreationDate': 'Creation Date',
   'DisplayLabel': 'Short Description'
@@ -127,8 +127,8 @@ if 'active_fullscreen' not in st.session_state:
 if st.session_state['active_fullscreen'] is None:
     #sidebar filters
     st.sidebar.header("Board Filters")
-    app_name_filter = st.header.selectbox("Select App Name", App_Names)
-    date_range_filter = st.header.date_input("Select Date Range",[])
+    app_name_filter = st.sidebar.selectbox("Select App Name", App_Names)
+    date_range_filter = st.sidebar.date_input("Select Date Range",[])
 
     #Apply Filter
     if app_name_filter != "All":
@@ -148,17 +148,17 @@ if st.session_state['active_fullscreen'] is None:
             df_alerts = df_alerts[(pd.to_datetime((df_alerts['date_occured']) >= pd.to_datetime(start_date)) & (pd.to_datetime(df_alerts['date_occured']) <= pd.to_datetime(end_date))]
         
         if not df_incidents.empty:
-            df_incidents = df_incidents[(pd.to_datetime((df_incidents['date_occured'] >= pd.to_datetime(start_date)) & (pd.to_datetime(df_alerts['date_occured']) <= pd.to_datetime(end_date))]
+            df_incidents = df_incidents[(pd.to_datetime((df_incidents['date_occured'] >= pd.to_datetime(start_date)) & (pd.to_datetime(df_incidents['date_occured']) <= pd.to_datetime(end_date))]
 
     df_data = df_data.loc[:, ['DateTime', 'App Name', 'Severity', 'Alert Type', 'Message', 'URL']]
-    df_incident = df_incident.loc[:, ['App Name', 'Id', 'Creation Date', 'Short Description', 'Priority', 'Status']]
-    df_alerts = df_alerts, loc[:, ['Id', 'App Name', 'Display Label', 'Ems Creation Date', 'Priority']]
+    df_incidents = df_incidents.loc[:, ['App Name', 'Id', 'Creation Date', 'Short Description', 'Priority', 'Status']]
+    df_alerts = df_alerts.loc[:, ['Id', 'App Name', 'Display Label', 'Ems Creation Date', 'Priority']]
     df_changes = df_changes.loc[:, ['Display Label', 'Scheduled Start Time', 'Scheduled End Time', 'Register for actual service', 'Impacted Core Business 0', 'Phase Id', 'Service Desk Group', 'Ticket Link', 'Date Occurred']]
 
-    if "URL" in df.data.columns:
+    if "URL" in df_data.columns:
         df_data["URL"] = df_data["URL"].apply(lambda x: f'<a href="{x}" target="_blank">{x}</a>')
 
-    if "Ticket Link" in df.data.columns:
+    if "Ticket Link" in df_changes.columns:
         df_changes["Ticket Link"] = df_changes["Ticket Link"].apply(lambda x: f'<a href="{x}" target="_blank">{x}</a>')
 
     #Bar Chart
@@ -186,15 +186,15 @@ if st.session_state['active_fullscreen'] is None:
 
 else:
     df_data = df_data.loc[:, ['DateTime', 'App Name', 'Severity', 'Alert Type', 'Message', 'URL']]
-    df_incident = df_incident.loc[:, ['App Name', 'Id', 'Creation Date', 'Short Description', 'Priority', 'Status']]
-    df_alerts = df_alerts, loc[:, ['Id', 'App Name', 'Display Label', 'Ems Creation Date', 'Priority']]
+    df_incidents = df_incidents.loc[:, ['App Name', 'Id', 'Creation Date', 'Short Description', 'Priority', 'Status']]
+    df_alerts = df_alerts.loc[:, ['Id', 'App Name', 'Display Label', 'Ems Creation Date', 'Priority']]
     df_changes = df_changes.loc[:, ['Display Label', 'Scheduled Start Time', 'Scheduled End Time', 'Register for actual service', 'Impacted Core Business 0', 'Phase Id', 'Service Desk Group', 'Ticket Link', 'Date Occurred']] 
 
 
-    if "URL" in df.data.columns:
+    if "URL" in df_data.columns:
         df_data["URL"] = df_data["URL"].apply(lambda x: f'<a href="{x}" target="_blank">{x}</a>')
 
-    if "Ticket Link" in df.data.columns:
+    if "Ticket Link" in df_changes.columns:
         df_changes["Ticket Link"] = df_changes["Ticket Link"].apply(lambda x: f'<a href="{x}" target="_blank">{x}</a>')
 
     #Bar Chart
@@ -205,7 +205,7 @@ else:
     if st.session_state["active_fullscreen"]=="elastic":
         render_table_section("Application Alert -Elastic",df_data,"elastic")
     elif st.session_state["active_fullscreen"]=="incidents":
-        render_table_section("Incidents - Ongoing Incidents",df_incident,"incidents")
+        render_table_section("Incidents - Ongoing Incidents",df_incidents,"incidents")
     elif st.session_state["active_fullscreen"]=="alerts":
         render_table_section("Application Alerts - Unity",df_alerts,"alerts")
     elif st.session_state["active_fullscreen"]=="changes":
