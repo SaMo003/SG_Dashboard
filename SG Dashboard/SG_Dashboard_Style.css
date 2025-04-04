@@ -1,0 +1,38 @@
+.element-container .stPlotlyChart{
+    margin:16px;
+    height:400px;
+}
+.element-container .stMarkdown{
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    margin:16px;
+}
+.dataframe-container{
+    height:350px;
+    overflow-y: auto !important;
+    display: block;
+    border: 1px solid #ddd;
+    padding: 10px;
+}
+.stMarkdown h2{
+    margin: 0;
+    padding:8px;
+    background-color: rgba(222,222,222);
+    border-radius: 10px;
+    border-bottom: 1px solid #ddd;
+}
+th, td{
+    white-space:nowrap;
+}
+div.stButton > button{
+    background-color:rgba(222,222,222);
+    margin-left: 20px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    cursor:pointer;
+    transition: background-color 0.3s !important;
+}
+
+div.stButton > button:hover{
+    background-color: rgba(222,222,222);
+}
