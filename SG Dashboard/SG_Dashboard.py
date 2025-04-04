@@ -118,7 +118,7 @@ df_changes.rename(columns={
   'PhaseId': 'Phase Id', 
   'ServiceDeskGroup': 'Service Desk Group', 
   'TicketLink': 'Ticket Link', 
-  'date_occurred': 'Date Occurred'}, inplace=True)
+  'date_occured': 'Date Occurred'}, inplace=True)
 
 #full screen code starts
 if 'active_fullscreen' not in st.session_state:
@@ -142,7 +142,7 @@ if st.session_state['active_fullscreen'] is None:
     if len(date_range_filter)!= 0:
         start_date,end_date = date_range_filter
         if not df_data.empty:
-            df_data = df_data[(pd.to_datetime(df_data['date_occured']) >= pd.to_datetime(start_date)) & (pd.to_datetime(df_data['date_occured']) <= pd.to_date_time(end_date))]
+            df_data = df_data[(pd.to_datetime(df_data['date_occured']) >= pd.to_datetime(start_date)) & (pd.to_datetime(df_data['date_occured']) <= pd.to_datetime(end_date))]
 
         if not df_alerts.empty:
             df_alerts = df_alerts[(pd.to_datetime(df_alerts['date_occured']) >= pd.to_datetime(start_date)) & (pd.to_datetime(df_alerts['date_occured']) <= pd.to_datetime(end_date))]
@@ -164,7 +164,7 @@ if st.session_state['active_fullscreen'] is None:
     #Bar Chart
     app_counts = df_data["App Name"].value_counts().reset_index()
     app_counts.columns = ["App Name","Count"]
-    fig = px.bar(app_counts, x="App Name", y="Counts", title="Application Alert - Count", color="App Name")
+    fig = px.bar(app_counts, x="App Name", y="Count", title="Application Alert - Count", color="App Name")
 
     #Layout
     left_half , right_half =st.columns([1,1])
@@ -178,10 +178,10 @@ if st.session_state['active_fullscreen'] is None:
         render_table_section("Application Alerts - Unity",df_alerts,"alerts")
 
     #Apply the function to the 'Impacted core business 0' column
-    df_changes['Impacted Core Business 0'] = df_changes['Impacted Core Business 0].apply(extract_first_value)
+    df_changes['Impacted Core Business 0'] = df_changes['Impacted Core Business 0'].apply(extract_first_value)
     core_business_filter=st.checkbox("Show rows with Impacted Core Business - GCOO/DDS")
     if core_business_filter:
-        df_changes = df_changes[df_changes['Impacted Core Business 0'].str.contains("GCOO/DDS")
+        df_changes = df_changes[df_changes['Impacted Core Business 0'].str.contains("GCOO/DDS")]
     render_table_section("Planned Changes on Infra",df_changes,"changes")
 
 else:
@@ -200,7 +200,7 @@ else:
     #Bar Chart
     app_counts = df_data["App Name"].value_counts().reset_index()
     app_counts.columns = ["App Name","Count"]
-    fig = px.bar(app_counts, x="App Name", y="Counts", title="Application Alert - Count", color="App Name")
+    fig = px.bar(app_counts, x="App Name", y="Count", title="Application Alert - Count", color="App Name")
 
     if st.session_state["active_fullscreen"]=="elastic":
         render_table_section("Application Alert -Elastic",df_data,"elastic")
