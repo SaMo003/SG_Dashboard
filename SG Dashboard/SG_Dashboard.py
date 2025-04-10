@@ -31,11 +31,6 @@ df_alerts = pd.DataFrame(data_alerts) if data_alerts else pd.DataFrame(columns=[
 df_incidents = pd.DataFrame(data_incidents) if data_incidents else pd.DataFrame(columns=['App Name','Id','Creation Date','Short Description','Priority','Status'])
 df_changes = pd.DataFrame(data_changes) if data_changes else pd.DataFrame(columns=['Display Label','Scheduled Start Time','Scheduled End Time','Register for actual service','Impacted Core Business 0','Phase Id','Service Desk Group','Ticket Link','Date Occurred'])
 
-if df_incidents.empty:
-    df_incidents = pd.DataFrame(columns=['App Name','Id','Creation Date','Short Description','Priority','Status'])
-if df_alerts.empty:
-    df_alerts = pd.DataFrame(columns=['Id','App Name','Display Label','Ems Creation Date','Priority'])
-
 def create_empty_table(columns):
     return f'<table><thead><tr>{"".join([f"<th>{col}</th>" for col in columns])}</tr></thead><tbody><tr><td colspan="{len(columns)}" style="text-align:center;">No Rows to Show</td></tr></tbody></table>'
 
@@ -44,7 +39,17 @@ def extract_first_value(value):
     if isinstance(value, list) and len(value) > 0:
         return value[0]
     return value
-
+    
+def render_table_html(df):
+    if df.empty:
+        st.markdown(
+            f'<div class="dataframe-container">{create_empty_table(df.columns)}</div>', unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            f'<div class="dataframe-container">{df.to_html(escape=False,index=False)}</div>',unsafe_allow_html=True
+        )
+        
 def render_table_section(title,df,table_key):
     active=st.session_state['active_fullscreen']
 
@@ -57,15 +62,7 @@ def render_table_section(title,df,table_key):
         st.markdown(
             '<style>div.block-container{padding:0; margin:0; max-width:100% !important}</style>',unsafe_allow_html=True
         )
-
-        if df.empty:
-            st.markdown(
-                f'<div class="dataframe-container">{create_empty_table(df.columns)}</div>', unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                f'<div class="dataframe-container">{df.to_html(escape=False,index=False)}</div>',unsafe_allow_html=True
-            )
+        render_table(df)
         return True
 
     elif active is not None:
@@ -75,12 +72,7 @@ def render_table_section(title,df,table_key):
     if st.button("Full Screen",key=f"full_{table_key}"):
         st.session_state['active_fullscreen'] = table_key
 
-    if df.empty:
-        st.markdown(
-            f'<div class="dataframe-container">{create_empty_table(df.columns)}</div>', unsafe_allow_html=True)
-    else:
-        st.markdown(
-            f'<div class="dataframe-container">{df.to_html(escape=False,index=False)}</div>',unsafe_allow_html=True )
+    render_table_html(df)
 
     return False
 
