@@ -1,3 +1,18 @@
+/* Add this to your dashboard_styles.css */
+.fullscreen-table-container {
+    width: 100% !important;
+    height: auto !important;
+    max-height: calc(100vh - 100px) !important; /* 100px for header and padding */
+    overflow-y: auto !important;
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin: 0 !important;
+}
+
+.no-data-fullscreen {
+    height: 350px !important; /* Same as original height */
+}
+
 .element-container .stPlotlyChart{
     margin:16px;
     height:400px;

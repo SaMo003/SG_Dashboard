@@ -31,15 +31,37 @@ def extract_first_value(value):
     return value   
 
 #Renders Tables
-def render_table_html(df):
+# def render_table_html(df):
+#     if df.empty:
+#         st.markdown(
+#             f'<div class="dataframe-container">{create_empty_table(df.columns)}</div>', unsafe_allow_html=True,
+#         )
+#     else:
+#         st.markdown(
+#             f'<div class="dataframe-container">{df.to_html(escape=False,index=False)}</div>',unsafe_allow_html=True
+#         )
+
+def render_table_html(df, fullscreen=False):
     if df.empty:
+        container_class = "no-data-fullscreen" if fullscreen else "dataframe-container"
         st.markdown(
-            f'<div class="dataframe-container">{create_empty_table(df.columns)}</div>', unsafe_allow_html=True,
+            f'<div class="{container_class}">{create_empty_table(df.columns)}</div>', 
+            unsafe_allow_html=True,
         )
     else:
+        container_class = "fullscreen-table-container" if fullscreen else "dataframe-container"
+        table_html = df.to_html(escape=False, index=False)
+        
+        # Calculate approximate required height (50px per row + 100px for headers)
+        row_count = len(df)
+        dynamic_height = min(50 * row_count + 100, 1000)  # Cap at 1000px
+        
+        style = f"max-height: {dynamic_height}px;" if row_count <= 15 else ""
+        
         st.markdown(
-            f'<div class="dataframe-container">{df.to_html(escape=False,index=False)}</div>',unsafe_allow_html=True
-        )
+            f'<div class="{container_class}" style="{style}">{table_html}</div>',
+            unsafe_allow_html=True
+)  
         
 def render_table_section(title,df,table_key):
     active=st.session_state['active_fullscreen']
@@ -55,6 +77,7 @@ def render_table_section(title,df,table_key):
             div[data-testid="stSidebar"]{display: none !important;}
             .element-container:not(:has(button:contains('Exit Full Screen'))){display:none !important;}
             div.block-container{padding:0; margin:0; max-width:100% !important}
+            html, body, #root, .block-container {height: 100% !important;}
         </style>
         """,unsafe_allow_html=True)
         
