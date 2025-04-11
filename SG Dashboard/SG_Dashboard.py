@@ -49,10 +49,15 @@ def render_table_section(title,df,table_key):
 
         if st.button("Exit Full Screen",key=f"exit_{table_key}"):
             st.session_state['active_fullscreen'] = None
-
-        st.markdown(
-            '<style>div.block-container{padding:0; margin:0; max-width:100% !important}</style>',unsafe_allow_html=True
-        )
+            st.rerun()
+        st.markdown("""
+        <style>
+            div[data-testid="stSidebar"]{display: none !important;}
+            .element-container:not(:has(button:contains('Exit Full Screen'))){display:none !important;}
+            div.block-container{padding:0; margin:0; max-width:100% !important}
+        </style>
+        """,unsafe_allow_html=True)
+        
         render_table_html(df)
         return True
 
@@ -62,7 +67,7 @@ def render_table_section(title,df,table_key):
     st.markdown(f'## {title}')
     if st.button("Full Screen",key=f"full_{table_key}"):
         st.session_state['active_fullscreen'] = table_key
-
+        st.rerun()
     render_table_html(df)
 
     return False
@@ -224,6 +229,7 @@ def main():
         #Reordering the columns
         df_data,df_incidents,df_alerts,df_changes = reorder_columns(df_data,df_incidents,df_alerts,df_changes)
 
+    if st.session_state['active_fullscreen'] is None:
         #Graph
         fig=bar_graph(fig)
 
