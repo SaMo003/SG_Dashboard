@@ -1,16 +1,33 @@
-/* Add this to your dashboard_styles.css */
-.fullscreen-table-container {
+/* Fullscreen table container */
+.fullscreen-table {
     width: 100% !important;
+    max-height: calc(100vh - 120px) !important;
+    overflow: auto !important;
+    border: 1px solid #ddd;
+    padding: 10px;
+}
+
+/* When table has few rows (no scroll needed) */
+.fullscreen-table.no-scroll {
     height: auto !important;
-    max-height: calc(100vh - 100px) !important; /* 100px for header and padding */
+    max-height: none !important;
+    overflow: hidden !important;
+}
+
+/* When table is empty */
+.fullscreen-table.empty-table {
+    height: 350px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Original table styling (non-fullscreen) */
+.dataframe-container {
+    height: 350px;
     overflow-y: auto !important;
     border: 1px solid #ddd;
     padding: 10px;
-    margin: 0 !important;
-}
-
-.no-data-fullscreen {
-    height: 350px !important; /* Same as original height */
 }
 
 .element-container .stPlotlyChart{
