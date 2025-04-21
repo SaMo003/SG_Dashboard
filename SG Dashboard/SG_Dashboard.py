@@ -1,57 +1,84 @@
 import streamlit as st
-import requests as req
+import requests
 import pandas as pd
 import plotly.express as px
-from constant_values import App_Names, url_alerts, url_incidents, url_data, url_changes
+from constant_values import APP_NAMES, URL_ALERTS, URL_INCIDENTS, URL_DATA, URL_CHANGES
+
+# Constants
+DATE_FORMAT = "%Y-%m-%d"
+DEFAULT_COLUMNS = {
+    "data": ["DateTime", "App Name", "Severity", "Alert Type", "Message", "URL"],
+    "incidents": ["App Name", "Id", "Creation Date", "Short Description", "Priority", "Status"],
+    "alerts": ["Id", "App Name", "Display Label", "Ems Creation Date", "Priority"],
+    "changes": [
+        "Display Label",
+        "Scheduled Start Time",
+        "Scheduled End Time",
+        "Register for actual service",
+        "Impacted Core Business 0",
+        "Phase Id",
+        "Service Desk Group",
+        "Ticket Link",
+        "Date Occurred"
+    ]
+}
 
 st.set_page_config(layout="wide")
 
 
-# loading the CSS file
-def load_css(fileName):
-    with open(fileName) as f:
+def load_css(file_name: str) -> None:
+    """Load and apply CSS styles from a file."""
+    with open(file_name) as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
-# Fetching Data from APIs
-def fetch_data(url):
+def fetch_data(url: str) -> dict:
+    """Fetch JSON data from a given API endpoint."""
     try:
-        response = req.get(url)
+        response = requests.get(url)
         response.raise_for_status()
         return response.json()
-    except (req.RequestException, req.HTTPError):
+    except (requests.RequestException, requests.HTTPError) as e:
+        st.error(f"Error fetching data from {url}: {str(e)}")
         return None
 
 
-# Create table spanning the column names to display "No Rows to Show" when table has no data
-def create_empty_table(columns):
-    return f'<table><thead><tr>{"".join([f"<th>{col}</th>" for col in columns])}</tr></thead><tbody><tr><td colspan="{len(columns)}" style="text-align:center;">No Rows to Show</td></tr></tbody></table>'
+def create_empty_table(columns: list) -> str:
+    """Generate HTML for an empty table with given columns."""
+    return (
+        f'<table><thead><tr>{"".join([f"<th>{col}</th>" for col in columns])}</tr></thead>'
+        f'<tbody><tr><td colspan="{len(columns)}" style="text-align:center;">No Rows to Show</td></tr></tbody></table>'
+    )
 
 
-# Function to extract first value from the list in the 'Impacted Core Business 0' column from the df_changes table
-def extract_first_value(value):
-    if isinstance(value, list) and len(value) > 0:
-        return value[0]
-    return value
+def extract_first_value(value) -> str:
+    """Extract the first value from a list if the input is a list."""
+    return value[0] if isinstance(value, list) and len(value) > 0 else value
 
 
-# Renders Tables
-def render_table_html(df):
-    if df.empty:
+def render_table_html(dataframe: pd.DataFrame) -> None:
+    """Render a DataFrame as an HTML table with proper styling."""
+    if dataframe.empty:
         st.markdown(
-            f'<div class="dataframe-container">{create_empty_table(df.columns)}</div>',
+            f'<div class="dataframe-container">{create_empty_table(dataframe.columns)}</div>',
             unsafe_allow_html=True,
         )
     else:
         st.markdown(
-            f'<div class="dataframe-container">{df.to_html(escape=False,index=False)}</div>',
+            f'<div class="dataframe-container">{dataframe.to_html(escape=False, index=False)}</div>',
             unsafe_allow_html=True,
         )
 
 
-def render_table_section(title, df, table_key):
-    active = st.session_state.get["active_fullscreen"]
+def render_table_section(title: str, dataframe: pd.DataFrame, table_key: str) -> bool:
+    """
+    Render a table section with fullscreen capability.
+    Returns True if in fullscreen mode for this table, False otherwise.
+    """
+    active = st.session_state.get("active_fullscreen")
+    
     if active == table_key:
+        # Fullscreen mode
         st.markdown(f"## {title}")
         if st.button("Exit Full Screen", key=f"exit_{table_key}"):
             st.session_state["active_fullscreen"] = None
@@ -60,19 +87,20 @@ def render_table_section(title, df, table_key):
         # Hide all other elements
         st.markdown(
             """
-        <style>
-            div[data-testid="stSidebar"] {display: none !important;}
-            .element-container:not(:has(button:contains('Exit Full Screen'))) {display: none !important;}
-            div.block-container {padding: 0; margin: 0; max-width: 100% !important;}
-        </style>
-        """,
+            <style>
+                div[data-testid="stSidebar"] {display: none !important;}
+                .element-container:not(:has(button:contains('Exit Full Screen'))) {display: none !important;}
+                div.block-container {padding: 0; margin: 0; max-width: 100% !important;}
+            </style>
+            """,
             unsafe_allow_html=True,
         )
 
-        render_table_html(df)
+        render_table_html(dataframe)
         return True
 
     elif active is not None:
+        # Another table is in fullscreen mode
         return False
 
     # Normal mode
@@ -80,26 +108,22 @@ def render_table_section(title, df, table_key):
     if st.button("Full Screen", key=f"full_{table_key}"):
         st.session_state["active_fullscreen"] = table_key
         st.rerun()
-    render_table_html(df)
+    render_table_html(dataframe)
     return False
 
 
-# Table preprocessing
-def df_data_preprocess(url_data):
-    # Fetch data (fetches json data)
-    data_data = fetch_data(url_data)
-
-    # Convert to data frame
-    df_data = (
-        pd.DataFrame(data_data)
-        if data_data
-        else pd.DataFrame(
-            columns=["DataTime", "App Name", "Severity", "Alert Type", "Message", "URL"]
-        )
+def preprocess_alert_data() -> pd.DataFrame:
+    """Fetch and preprocess alert data from Elastic."""
+    raw_data = fetch_data(URL_DATA)
+    
+    dataframe = (
+        pd.DataFrame(raw_data)
+        if raw_data
+        else pd.DataFrame(columns=DEFAULT_COLUMNS["data"])
     )
 
-    # Rename and select columns for df_data
-    df_data.rename(
+    # Rename columns
+    dataframe.rename(
         columns={
             "@timestamp": "DateTime",
             "app_name": "App Name",
@@ -111,32 +135,26 @@ def df_data_preprocess(url_data):
         inplace=True,
     )
 
-    # Convert data in URL column to clickable links
-    if "URL" in df_data.columns:
-        df_data["URL"] = df_data["URL"].apply(
-            lambda x: f'<a href="{x}" target="_blank">{x}</a>'
+    # Convert URLs to clickable links
+    if "URL" in dataframe.columns:
+        dataframe["URL"] = dataframe["URL"].apply(
+            lambda x: f'<a href="{x}" target="_blank">{x}</a>' if pd.notnull(x) else ""
         )
 
-    return df_data
+    return dataframe
 
 
-def df_incidents_preprocess(url_incidents):
-    data_incidents = fetch_data(url_incidents)
-    df_incidents = (
-        pd.DataFrame(data_incidents)
-        if data_incidents
-        else pd.DataFrame(
-            columns=[
-                "App Name",
-                "Id",
-                "Creation Date",
-                "Short Description",
-                "Priority",
-                "Status",
-            ]
-        )
+def preprocess_incident_data() -> pd.DataFrame:
+    """Fetch and preprocess incident data."""
+    raw_data = fetch_data(URL_INCIDENTS)
+    
+    dataframe = (
+        pd.DataFrame(raw_data)
+        if raw_data
+        else pd.DataFrame(columns=DEFAULT_COLUMNS["incidents"])
     )
-    df_incidents.rename(
+
+    dataframe.rename(
         columns={
             "app_name": "App Name",
             "EmsCreationDate": "Creation Date",
@@ -145,19 +163,20 @@ def df_incidents_preprocess(url_incidents):
         inplace=True,
     )
 
-    return df_incidents
+    return dataframe
 
 
-def df_alerts_preprocess(url_alerts):
-    data_alerts = fetch_data(url_alerts)
-    df_alerts = (
-        pd.DataFrame(data_alerts)
-        if data_alerts
-        else pd.DataFrame(
-            columns=["Id", "App Name", "Display Label", "Ems Creation Date", "Priority"]
-        )
+def preprocess_unity_alert_data() -> pd.DataFrame:
+    """Fetch and preprocess Unity alert data."""
+    raw_data = fetch_data(URL_ALERTS)
+    
+    dataframe = (
+        pd.DataFrame(raw_data)
+        if raw_data
+        else pd.DataFrame(columns=DEFAULT_COLUMNS["alerts"])
     )
-    df_alerts.rename(
+
+    dataframe.rename(
         columns={
             "app_name": "App Name",
             "EmsCreationDate": "Ems Creation Date",
@@ -165,29 +184,21 @@ def df_alerts_preprocess(url_alerts):
         },
         inplace=True,
     )
-    return df_alerts
+
+    return dataframe
 
 
-def df_changes_preprocess(url_changes):
-    data_changes = fetch_data(url_changes)
-    df_changes = (
-        pd.DataFrame(data_changes)
-        if data_changes
-        else pd.DataFrame(
-            columns=[
-                "Display Label",
-                "Scheduled Start Time",
-                "Scheduled End Time",
-                "Register for actual service",
-                "Impacted Core Business 0",
-                "Phase Id",
-                "Service Desk Group",
-                "Ticket Link",
-                "Date Occurred",
-            ]
-        )
+def preprocess_change_data() -> pd.DataFrame:
+    """Fetch and preprocess change management data."""
+    raw_data = fetch_data(URL_CHANGES)
+    
+    dataframe = (
+        pd.DataFrame(raw_data)
+        if raw_data
+        else pd.DataFrame(columns=DEFAULT_COLUMNS["changes"])
     )
-    df_changes.rename(
+
+    dataframe.rename(
         columns={
             "DisplayLabel": "Display Label",
             "ScheduledStartTime": "Scheduled Start Time",
@@ -201,191 +212,167 @@ def df_changes_preprocess(url_changes):
         },
         inplace=True,
     )
-    # Convert data in "Ticket Link" column to clickable links
-    if "Ticket Link" in df_changes.columns:
-        df_changes["Ticket Link"] = df_changes["Ticket Link"].apply(
-            lambda x: f'<a href="{x}" target="_blank">{x}</a>'
+
+    # Convert ticket links to clickable URLs
+    if "Ticket Link" in dataframe.columns:
+        dataframe["Ticket Link"] = dataframe["Ticket Link"].apply(
+            lambda x: f'<a href="{x}" target="_blank">{x}</a>' if pd.notnull(x) else ""
         )
 
-    return df_changes
+    return dataframe
 
 
-# Application Alert Count Graph
-def bar_graph(df_data):
-    # Bar Chart
-    app_counts = df_data["App Name"].value_counts().reset_index()
+def create_alert_count_chart(dataframe: pd.DataFrame) -> px.bar:
+    """Create a bar chart showing alert counts by application."""
+    app_counts = dataframe["App Name"].value_counts().reset_index()
     app_counts.columns = ["App Name", "Count"]
+    
     fig = px.bar(
         app_counts,
         x="App Name",
         y="Count",
-        title="Application Alert - Count",
+        title="Application Alert Count",
         color="App Name",
     )
-
+    
     return fig
 
 
-# Side bar App name and date filters
-def apply_filters(df_data, df_incidents, df_alerts, app_name_filter, date_range_filter):
-    # Apply Filter
-    if app_name_filter != "All":
-        if not df_data.empty:
-            df_data = df_data[df_data["App Name"] == app_name_filter]
-        if not df_alerts.empty:
-            df_alerts = df_alerts[df_alerts["App Name"] == app_name_filter]
-        if not df_incidents.empty:
-            df_incidents = df_incidents[df_incidents["App Name"] == app_name_filter]
+def apply_data_filters(
+    alert_data: pd.DataFrame,
+    incident_data: pd.DataFrame,
+    unity_alert_data: pd.DataFrame,
+    app_filter: str,
+    date_range: tuple
+) -> tuple:
+    """Apply filters to all datasets based on application and date range."""
+    if app_filter != "All":
+        if not alert_data.empty:
+            alert_data = alert_data[alert_data["App Name"] == app_filter]
+        if not unity_alert_data.empty:
+            unity_alert_data = unity_alert_data[unity_alert_data["App Name"] == app_filter]
+        if not incident_data.empty:
+            incident_data = incident_data[incident_data["App Name"] == app_filter]
 
-    if len(date_range_filter) != 0:
-        start_date, end_date = date_range_filter
-        if not df_data.empty:
-            df_data = df_data[
-                (pd.to_datetime(df_data["date_occured"]) >= pd.to_datetime(start_date))
-                & (pd.to_datetime(df_data["date_occured"]) <= pd.to_datetime(end_date))
-            ]
+    if len(date_range) == 2:
+        start_date, end_date = date_range
+        date_columns = {
+            "alert_data": "date_occured",
+            "unity_alert_data": "date_occured",
+            "incident_data": "date_occured"
+        }
 
-        if not df_alerts.empty:
-            df_alerts = df_alerts[
-                (
-                    pd.to_datetime(df_alerts["date_occured"])
-                    >= pd.to_datetime(start_date)
+        for df_name, date_col in date_columns.items():
+            df = locals()[df_name]
+            if not df.empty and date_col in df.columns:
+                mask = (
+                    (pd.to_datetime(df[date_col]) >= pd.to_datetime(start_date)) & 
+                    (pd.to_datetime(df[date_col]) <= pd.to_datetime(end_date)
                 )
-                & (
-                    pd.to_datetime(df_alerts["date_occured"])
-                    <= pd.to_datetime(end_date)
-                )
-            ]
+                locals()[df_name] = df[mask]
 
-        if not df_incidents.empty:
-            df_incidents = df_incidents[
-                (
-                    pd.to_datetime(df_incidents["date_occured"])
-                    >= pd.to_datetime(start_date)
-                )
-                & (
-                    pd.to_datetime(df_incidents["date_occured"])
-                    <= pd.to_datetime(end_date)
-                )
-            ]
-
-    return df_data, df_incidents, df_alerts
+    return alert_data, incident_data, unity_alert_data
 
 
-# Select only the required columns in the required order
-def reorder_columns(df_data, df_incidents, df_alerts, df_changes):
-    df_data = df_data.loc[
-        :, ["DateTime", "App Name", "Severity", "Alert Type", "Message", "URL"]
-    ]
-    df_incidents = df_incidents.loc[
-        :,
-        ["App Name", "Id", "Creation Date", "Short Description", "Priority", "Status"],
-    ]
-    df_alerts = df_alerts.loc[
-        :, ["Id", "App Name", "Display Label", "Ems Creation Date", "Priority"]
-    ]
-    df_changes = df_changes.loc[
-        :,
-        [
-            "Display Label",
-            "Scheduled Start Time",
-            "Scheduled End Time",
-            "Register for actual service",
-            "Impacted Core Business 0",
-            "Phase Id",
-            "Service Desk Group",
-            "Ticket Link",
-            "Date Occurred",
-        ],
-    ]
-
-    return df_data, df_incidents, df_alerts, df_changes
-
-
-# df_changes table filter to display records including GCOO/DDS
-def df_changes_filter(df_changes):
-    # Apply the function to the 'Impacted core business 0' column
-    df_changes["Impacted Core Business 0"] = df_changes[
-        "Impacted Core Business 0"
-    ].apply(extract_first_value)
-    core_business_filter = st.checkbox(
-        "Show rows with Impacted Core Business - GCOO/DDS"
+def filter_changes_by_business_impact(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """Filter changes data to show only GCOO/DDS impacted items if checkbox is selected."""
+    dataframe["Impacted Core Business 0"] = dataframe["Impacted Core Business 0"].apply(
+        extract_first_value
     )
-    if core_business_filter:
-        df_changes = df_changes[
-            df_changes["Impacted Core Business 0"].str.contains("GCOO/DDS")
+    
+    if st.checkbox("Show rows with Impacted Core Business - GCOO/DDS"):
+        dataframe = dataframe[
+            dataframe["Impacted Core Business 0"].str.contains("GCOO/DDS", na=False)
         ]
+    
+    return dataframe
 
-    return df_changes
+
+def render_main_content(
+    alert_data: pd.DataFrame,
+    incident_data: pd.DataFrame,
+    unity_alert_data: pd.DataFrame,
+    change_data: pd.DataFrame
+) -> None:
+    """Render the main dashboard content."""
+    # Create chart
+    chart = create_alert_count_chart(alert_data)
+
+    # Layout
+    left_column, right_column = st.columns([1, 1])
+    
+    with left_column:
+        st.markdown("## Application Alert Count")
+        st.plotly_chart(chart, use_container_width=True)
+        render_table_section("Application Alert - Elastic", alert_data, "elastic")
+
+    with right_column:
+        render_table_section("Incidents - Ongoing Incidents", incident_data, "incidents")
+        render_table_section("Application Alerts - Unity", unity_alert_data, "alerts")
+
+    # Filter and render changes table
+    change_data = filter_changes_by_business_impact(change_data)
+    render_table_section("Planned Changes on Infra", change_data, "changes")
 
 
-def main():
+def render_fullscreen_content(
+    alert_data: pd.DataFrame,
+    incident_data: pd.DataFrame,
+    unity_alert_data: pd.DataFrame,
+    change_data: pd.DataFrame
+) -> None:
+    """Render content when in fullscreen mode for a specific table."""
+    active_table = st.session_state["active_fullscreen"]
+    
+    if active_table == "elastic":
+        render_table_section("Application Alert - Elastic", alert_data, "elastic")
+    elif active_table == "incidents":
+        render_table_section("Incidents - Ongoing Incidents", incident_data, "incidents")
+    elif active_table == "alerts":
+        render_table_section("Application Alerts - Unity", unity_alert_data, "alerts")
+    elif active_table == "changes":
+        render_table_section("Planned Changes on Infra", change_data, "changes")
 
+
+def main() -> None:
+    """Main application function."""
+    # Load CSS and initialize session state
     load_css("dashboard_styles.css")
-
-    df_data = df_data_preprocess(url_data)
-    df_alerts = df_alerts_preprocess(url_alerts)
-    df_incidents = df_incidents_preprocess(url_incidents)
-    df_changes = df_changes_preprocess(url_changes)
-
-    # full screen code start
+    
     if "active_fullscreen" not in st.session_state:
         st.session_state["active_fullscreen"] = None
 
+    # Load and preprocess all data
+    alert_data = preprocess_alert_data()
+    unity_alert_data = preprocess_unity_alert_data()
+    incident_data = preprocess_incident_data()
+    change_data = preprocess_change_data()
+
     if st.session_state["active_fullscreen"] is None:
-        # sidebar filters
+        # Normal view with sidebar filters
         st.sidebar.header("Board Filters")
-        app_name_filter = st.sidebar.selectbox("Select App Name", App_Names)
-        date_range_filter = st.sidebar.date_input("Select Date Range", [])
+        selected_app = st.sidebar.selectbox("Select App Name", APP_NAMES)
+        selected_date_range = st.sidebar.date_input("Select Date Range", [])
 
-        # Applying filters
-        df_data, df_incidents, df_alerts = apply_filters(
-            df_data, df_incidents, df_alerts, app_name_filter, date_range_filter
+        # Apply filters
+        alert_data, incident_data, unity_alert_data = apply_data_filters(
+            alert_data,
+            incident_data,
+            unity_alert_data,
+            selected_app,
+            selected_date_range
         )
 
-        # Reordering the columns
-        df_data, df_incidents, df_alerts, df_changes = reorder_columns(
-            df_data, df_incidents, df_alerts, df_changes
-        )
+        # Select only required columns
+        alert_data = alert_data[DEFAULT_COLUMNS["data"]]
+        incident_data = incident_data[DEFAULT_COLUMNS["incidents"]]
+        unity_alert_data = unity_alert_data[DEFAULT_COLUMNS["alerts"]]
+        change_data = change_data[DEFAULT_COLUMNS["changes"]]
 
-        # Graph
-        fig = bar_graph(fig)
-
-        # Layout
-        left_half, right_half = st.columns([1, 1])
-        with left_half:
-            st.markdown("## Application Alert Count")
-            st.plotly_chart(fig, use_container_width=True)
-            render_table_section("Application Alert -Elastic", df_data, "elastic")
-
-        with right_half:
-            render_table_section(
-                "Incidents - Ongoing Incidents", df_incidents, "incidents"
-            )
-            render_table_section("Application Alerts - Unity", df_alerts, "alerts")
-
-        df_changes = df_changes_filter(df_changes)
-        render_table_section("Planned Changes on Infra", df_changes, "changes")
-
+        render_main_content(alert_data, incident_data, unity_alert_data, change_data)
     else:
-        # Reordering the columns
-        df_data, df_incidents, df_alerts, df_changes = reorder_columns(
-            df_data, df_incidents, df_alerts, df_changes
-        )
-
-        # Graph
-        fig = bar_graph(fig)
-
-        if st.session_state["active_fullscreen"] == "elastic":
-            render_table_section("Application Alert -Elastic", df_data, "elastic")
-        elif st.session_state["active_fullscreen"] == "incidents":
-            render_table_section(
-                "Incidents - Ongoing Incidents", df_incidents, "incidents"
-            )
-        elif st.session_state["active_fullscreen"] == "alerts":
-            render_table_section("Application Alerts - Unity", df_alerts, "alerts")
-        elif st.session_state["active_fullscreen"] == "changes":
-            render_table_section("Planned Changes on Infra", df_changes, "changes")
+        # Fullscreen view for a specific table
+        render_fullscreen_content(alert_data, incident_data, unity_alert_data, change_data)
 
 
 if __name__ == "__main__":
