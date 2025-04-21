@@ -34,6 +34,7 @@ def extract_first_value(value):
         return value[0]
     return value
 
+<<<<<<< HEAD
 
 # Renders Tables
 # def render_table_html(df):
@@ -71,6 +72,23 @@ def render_table_html(df, fullscreen=False):
 def render_table_section(title, df, table_key):
     active = st.session_state.get("active_fullscreen")
 
+=======
+#Renders Tables
+def render_table_html(df):
+     if df.empty:
+         st.markdown(
+             f'<div class="dataframe-container">{create_empty_table(df.columns)}</div>', unsafe_allow_html=True,
+         )
+     else:
+         st.markdown(
+            f'<div class="dataframe-container">{df.to_html(escape=False,index=False)}</div>',unsafe_allow_html=True
+        )
+
+        
+def render_table_section(title, df, table_key):
+    active = st.session_state.get['active_fullscreen']
+    
+>>>>>>> 62af41b832f8b62e5ff2a8235d0ae02fae6b2bac
     if active == table_key:
         # Fullscreen mode - only show this table
         st.markdown(f"## {title}")
@@ -83,9 +101,8 @@ def render_table_section(title, df, table_key):
             """
         <style>
             div[data-testid="stSidebar"] {display: none !important;}
-            .element-container:not(:has(+ .element-container .fullscreen-table)) {display: none !important;}
-            div.block-container {padding: 1rem !important; margin: 0 !important; max-width: 100% !important;}
-            html, body, #root {height: 100% !important;}
+            .element-container:not(:has(button:contains('Exit Full Screen'))) {display: none !important;}
+            div.block-container {padding: 0; margin: 0; max-width: 100% !important;}
         </style>
         """,
             unsafe_allow_html=True,
@@ -383,6 +400,7 @@ def main():
             df_data, df_incidents, df_alerts, app_name_filter, date_range_filter
         )
 
+<<<<<<< HEAD
         # Reordering the columns
         df_data, df_incidents, df_alerts, df_changes = reorder_columns(
             df_data, df_incidents, df_alerts, df_changes
@@ -391,6 +409,13 @@ def main():
     if st.session_state["active_fullscreen"] is None:
         # Graph
         fig = bar_graph(fig)
+=======
+        #Reordering the columns
+        df_data,df_incidents,df_alerts,df_changes = reorder_columns(df_data,df_incidents,df_alerts,df_changes)
+        
+        #Graph
+        fig=bar_graph(fig)
+>>>>>>> 62af41b832f8b62e5ff2a8235d0ae02fae6b2bac
 
         # Layout
         left_half, right_half = st.columns([1, 1])
@@ -428,6 +453,10 @@ def main():
         elif st.session_state["active_fullscreen"] == "changes":
             render_table_section("Planned Changes on Infra", df_changes, "changes")
 
+<<<<<<< HEAD
 
 if __name__ == "__main__":
+=======
+if __name__=="__main__":
+>>>>>>> 62af41b832f8b62e5ff2a8235d0ae02fae6b2bac
     main()
