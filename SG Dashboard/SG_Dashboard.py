@@ -34,24 +34,24 @@ def extract_first_value(value):
         return value[0]
     return value
 
-<<<<<<< HEAD
 
-#Renders Tables
+# Renders Tables
 def render_table_html(df):
     if df.empty:
         st.markdown(
-            f'<div class="dataframe-container">{create_empty_table(df.columns)}</div>', unsafe_allow_html=True,
+            f'<div class="dataframe-container">{create_empty_table(df.columns)}</div>',
+            unsafe_allow_html=True,
         )
     else:
         st.markdown(
-            f'<div class="dataframe-container">{df.to_html(escape=False,index=False)}</div>',unsafe_allow_html=True
+            f'<div class="dataframe-container">{df.to_html(escape=False,index=False)}</div>',
+            unsafe_allow_html=True,
         )
 
-        
+
 def render_table_section(title, df, table_key):
-    active = st.session_state.get['active_fullscreen']
+    active = st.session_state.get["active_fullscreen"]
     if active == table_key:
-        # Fullscreen mode - only show this table
         st.markdown(f"## {title}")
         if st.button("Exit Full Screen", key=f"exit_{table_key}"):
             st.session_state["active_fullscreen"] = None
@@ -66,10 +66,10 @@ def render_table_section(title, df, table_key):
             div.block-container {padding: 0; margin: 0; max-width: 100% !important;}
         </style>
         """,
-        unsafe_allow_html=True,
+            unsafe_allow_html=True,
         )
 
-        render_table_html(df, fullscreen=True)
+        render_table_html(df)
         return True
 
     elif active is not None:
@@ -80,7 +80,6 @@ def render_table_section(title, df, table_key):
     if st.button("Full Screen", key=f"full_{table_key}"):
         st.session_state["active_fullscreen"] = table_key
         st.rerun()
-
     render_table_html(df)
     return False
 
@@ -122,10 +121,7 @@ def df_data_preprocess(url_data):
 
 
 def df_incidents_preprocess(url_incidents):
-    # Fetch data (fetches json data)
     data_incidents = fetch_data(url_incidents)
-
-    # Convert to data frame
     df_incidents = (
         pd.DataFrame(data_incidents)
         if data_incidents
@@ -140,8 +136,6 @@ def df_incidents_preprocess(url_incidents):
             ]
         )
     )
-
-    # Rename and select columns for df_incidents
     df_incidents.rename(
         columns={
             "app_name": "App Name",
@@ -155,10 +149,7 @@ def df_incidents_preprocess(url_incidents):
 
 
 def df_alerts_preprocess(url_alerts):
-    # Fetch data (fetches json data)
     data_alerts = fetch_data(url_alerts)
-
-    # Convert to data frame
     df_alerts = (
         pd.DataFrame(data_alerts)
         if data_alerts
@@ -166,8 +157,6 @@ def df_alerts_preprocess(url_alerts):
             columns=["Id", "App Name", "Display Label", "Ems Creation Date", "Priority"]
         )
     )
-
-    # Rename and select columns for df_alerts
     df_alerts.rename(
         columns={
             "app_name": "App Name",
@@ -176,15 +165,11 @@ def df_alerts_preprocess(url_alerts):
         },
         inplace=True,
     )
-
     return df_alerts
 
 
 def df_changes_preprocess(url_changes):
-    # Fetch data (fetches json data)
     data_changes = fetch_data(url_changes)
-
-    # Convert to data frame
     df_changes = (
         pd.DataFrame(data_changes)
         if data_changes
@@ -202,8 +187,6 @@ def df_changes_preprocess(url_changes):
             ]
         )
     )
-
-    # Rename and select columns for df_changes
     df_changes.rename(
         columns={
             "DisplayLabel": "Display Label",
@@ -218,7 +201,6 @@ def df_changes_preprocess(url_changes):
         },
         inplace=True,
     )
-
     # Convert data in "Ticket Link" column to clickable links
     if "Ticket Link" in df_changes.columns:
         df_changes["Ticket Link"] = df_changes["Ticket Link"].apply(
@@ -361,22 +343,13 @@ def main():
             df_data, df_incidents, df_alerts, app_name_filter, date_range_filter
         )
 
-<<<<<<< HEAD
         # Reordering the columns
         df_data, df_incidents, df_alerts, df_changes = reorder_columns(
             df_data, df_incidents, df_alerts, df_changes
         )
 
-    if st.session_state["active_fullscreen"] is None:
         # Graph
         fig = bar_graph(fig)
-=======
-        #Reordering the columns
-        df_data,df_incidents,df_alerts,df_changes = reorder_columns(df_data,df_incidents,df_alerts,df_changes)
-        
-        #Graph
-        fig=bar_graph(fig)
->>>>>>> 62af41b832f8b62e5ff2a8235d0ae02fae6b2bac
 
         # Layout
         left_half, right_half = st.columns([1, 1])
@@ -414,10 +387,6 @@ def main():
         elif st.session_state["active_fullscreen"] == "changes":
             render_table_section("Planned Changes on Infra", df_changes, "changes")
 
-<<<<<<< HEAD
 
 if __name__ == "__main__":
-=======
-if __name__=="__main__":
->>>>>>> 62af41b832f8b62e5ff2a8235d0ae02fae6b2bac
     main()
