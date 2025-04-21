@@ -36,59 +36,20 @@ def extract_first_value(value):
 
 <<<<<<< HEAD
 
-# Renders Tables
-# def render_table_html(df):
-#     if df.empty:
-#         st.markdown(
-#             f'<div class="dataframe-container">{create_empty_table(df.columns)}</div>', unsafe_allow_html=True,
-#         )
-#     else:
-#         st.markdown(
-#             f'<div class="dataframe-container">{df.to_html(escape=False,index=False)}</div>',unsafe_allow_html=True
-#         )
-
-
-def render_table_html(df, fullscreen=False):
-    if df.empty:
-        container_class = (
-            "fullscreen-table empty-table" if fullscreen else "dataframe-container"
-        )
-        st.markdown(
-            f'<div class="{container_class}">{create_empty_table(df.columns)}</div>',
-            unsafe_allow_html=True,
-        )
-    else:
-        container_class = "fullscreen-table"
-        # Add 'no-scroll' class if table is small (less than 10 rows)
-        if len(df) <= 10:
-            container_class += " no-scroll"
-
-        st.markdown(
-            f'<div class="{container_class}">{df.to_html(escape=False, index=False)}</div>',
-            unsafe_allow_html=True,
-        )
-
-
-def render_table_section(title, df, table_key):
-    active = st.session_state.get("active_fullscreen")
-
-=======
 #Renders Tables
 def render_table_html(df):
-     if df.empty:
-         st.markdown(
-             f'<div class="dataframe-container">{create_empty_table(df.columns)}</div>', unsafe_allow_html=True,
-         )
-     else:
-         st.markdown(
+    if df.empty:
+        st.markdown(
+            f'<div class="dataframe-container">{create_empty_table(df.columns)}</div>', unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
             f'<div class="dataframe-container">{df.to_html(escape=False,index=False)}</div>',unsafe_allow_html=True
         )
 
         
 def render_table_section(title, df, table_key):
     active = st.session_state.get['active_fullscreen']
-    
->>>>>>> 62af41b832f8b62e5ff2a8235d0ae02fae6b2bac
     if active == table_key:
         # Fullscreen mode - only show this table
         st.markdown(f"## {title}")
@@ -105,7 +66,7 @@ def render_table_section(title, df, table_key):
             div.block-container {padding: 0; margin: 0; max-width: 100% !important;}
         </style>
         """,
-            unsafe_allow_html=True,
+        unsafe_allow_html=True,
         )
 
         render_table_html(df, fullscreen=True)
